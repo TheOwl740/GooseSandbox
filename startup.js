@@ -1,7 +1,7 @@
 //jshint maxerr: 10000
 
 //VERSION CONTROL
-const version = 3;
+const version = 0;
 const versionData = [
   "Version 0: Welcome to Goose Sandbox version 0:  this version is before my engine rework and is the original release. You will get an alert like this on startup every time there is a new version of the game."
 ];
