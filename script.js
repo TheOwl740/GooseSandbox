@@ -1,9 +1,10 @@
 //PRIMARY GAME LOOP
 function update() {
   if(inGame) {
-    e.methods.clearCanvas(new FillRenderer("#0c2608", "white", 1, 0));
+    e.clearCanvas(new FillRenderer("#0c2608", "white", 1, 0));
     //renderGrass();
     updatePools();
+    updateBackgroundItems();
     updateFlock();
     updateCamera();
     updateCursor();
@@ -12,11 +13,11 @@ function update() {
     updateEffects();
     updateHud();
   } else {
-    e.methods.clearCanvas(new FillRenderer("white", "white", 1, 0));
+    e.clearCanvas(new FillRenderer("white", "white", 1, 0));
     updateHomescreen();
   }
   buttonCount++;
 }
 
 //TIMER INTERVAL
-var timer = setInterval(update, 10);
+const timer = setInterval(update, 10);
