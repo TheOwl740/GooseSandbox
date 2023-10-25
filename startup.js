@@ -464,6 +464,9 @@ function updateHomescreen() {
   e.renderImage(new Vector2(e.w - 53, (e.h * -1) + 53), new ImageRenderer(images.owlLogo, 1, 0, 0, 96, 96, false, false, true, false));
   e.renderImage(new Vector2(e.w - 300, e.h / -2), new ImageRenderer(images.goose.idle, 1, 0, 0, (e.h - 50) * 0.75, (e.h - 50) * 1, false, false, true, false));
   e.renderImage(new Vector2(220, (e.h * -1) + 280), new ImageRenderer(images.buttons.newGame, 1, 0, 0, 420, 96, false, false, true, false));
+  if(!inApp) {
+    e.renderText(new Vector2(e.w - 30 - (20 * version.toString().length), -40), new Text("Trebuchet MS", "V" + version, 0, 0, 40, true, false), new FillRenderer("black", "black", 0.8, 0));
+  }
   //e.renderImage(new Vector2(220, (e.h * -1) + 170), new ImageRenderer(images.buttons.openSave, 1, 0, 0, 420, 96, false, false, true, false));
   if(inApp) {
     e.renderImage(new Vector2(220, (e.h * -1) + 60), new ImageRenderer(images.buttons.quit, 1, 0, 0, 420, 96, false, false, true, false));
