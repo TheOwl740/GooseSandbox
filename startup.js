@@ -264,7 +264,7 @@ class Goose {
         if(e.randomNum(1, 6000) === 1 && this.adult && !this.inWater) {
           this.target = "egg";
         }
-      } else if(this.target.type === "transform") {
+      } else if(this.target.type === "vector2") {
         if(e.randomNum(1, 400) === 1) {
           this.target = new Vector2(this.transform.x + (e.randomNum(-200, 200)) * this.size, this.transform.y + (e.randomNum(-200, 200)) * this.size);
         }
@@ -300,7 +300,7 @@ class Goose {
       }
     }
     //EXECUTE
-    if(this.target.type === "transform") {
+    if(this.target.type === "vector2") {
       this.transform = e.roundVector(e.addVector(this.transform, e.calcRotationalVector2(e.calcAngle(this.transform, this.target), this.size)), 1);
     }
     if(this.target.type === "absolute") {
@@ -321,7 +321,7 @@ class Goose {
     if(this.target === "sitting") {
       this.renderer.image = images.goose.sit;
     }
-    if(this.target.type === "transform") {
+    if(this.target.type === "vector2") {
       if(this.inWater) {
         this.renderer.image = images.goose.swimming;
       } else {
