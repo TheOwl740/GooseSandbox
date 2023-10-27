@@ -1,23 +1,28 @@
 //PRIMARY GAME LOOP
 function update() {
   if(inGame) {
-    e.clearCanvas(new FillRenderer("#0c2608", "white", 1, 0));
-    //renderGrass();
-    updatePools();
-    updateBackgroundItems();
-    updateFlock();
+    updateEntities();
     updateCamera();
     updateCursor();
-    managePlacement();
-    updateSelection();
-    updateEffects();
-    updateHud();
+    applyInputs();
+    updateRenderPipeline(false);
   } else {
-    e.clearCanvas(new FillRenderer("white", "white", 1, 0));
     updateHomescreen();
   }
   buttonCount++;
 }
 
+function render() {
+  if(inGame) {
+    e.clearCanvas(new FillRenderer("#0c2608", "white", 1, 0));
+    renderEntities();
+    renderHUD();
+  } else {
+    e.clearCanvas(new FillRenderer("white", "white", 1, 0));
+    renderHomescreen();
+  }
+}
+
 //TIMER INTERVAL
-const timer = setInterval(update, 10);
+const updateTimer = setInterval(update, 10);
+const renderTimer = setInterval(render, 10);
