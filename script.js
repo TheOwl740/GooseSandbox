@@ -5,9 +5,13 @@ function update() {
     updateCamera();
     updateCursor();
     applyInputs();
-    updateRenderPipeline(false);
+    updateRenderPipeline();
+    updatePopulationStats();
+    //updatePerformance();
+    EC++;
   } else {
     updateHomescreen();
+    HEC++;
   }
   buttonCount++;
 }
@@ -25,4 +29,5 @@ function render() {
 
 //TIMER INTERVAL
 const updateTimer = setInterval(update, 10);
-const renderTimer = setInterval(render, 10);
+const renderTimer = setInterval(render, 16);
+const load = setTimeout(loadFinished, 5000);
