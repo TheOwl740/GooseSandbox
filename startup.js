@@ -6,13 +6,22 @@ let i, ii;
 let f, ff;
 let c, cc;
 //misc
-let inApp = true;
-let inGame = false;
-let buttonCount = 0;
+//startup bools
+let [inApp, inGame, loaded] = [true, false, false];
+//counters
+let [HEC, EC, buttonCount] = [0, 0, 0];
 let player;
-let URPC = 0;
+let LP = 0;
+let FR = 16;
+let [births, deaths, ratio] = [0, 0, 0];
 
 //OBJECTS
+const populationLog = [
+];
+/*
+const performanceLog = [
+];
+*/
 const flock = {
   geese: [
   ],
@@ -62,6 +71,7 @@ const map = {
 };
 const renderPipeline = [
 ];
+/*
 const names = [
   "Ronald",
   "Baughman",
@@ -109,7 +119,6 @@ const names = [
   "Susanne",
   "Adam",
   "Joe",
-  "Biden",
   "Donald",
   "Yobama",
   "Barack",
@@ -142,11 +151,11 @@ const names = [
   "Conner",
   "Levi"
 ];
+*/
 
 //IMAGE TREE CREATION
 const images = {
-  owlLogo: e.generateImage("images/owlLogo.png"),
-  logo: e.generateImage("images/logo.png"),
+  icon: e.generateImage("images/icon.png"),
   buttons: {
     off: e.generateImage("images/buttons/off.png"),
     newGame: e.generateImage("images/buttons/newGame.png"),
@@ -161,29 +170,17 @@ const images = {
     actionBox: e.generateImage("images/misc/actionBox.png"),
     cross: e.generateImage("images/misc/cross.png"),
     selectBox: e.generateImage("images/misc/selectBox.png"),
-    key: e.generateImage("images/misc/key.png")
+    key: e.generateImage("images/misc/key.png"),
+    owlLogo: e.generateImage("images/misc/owlLogo.png"),
+    logo: e.generateImage("images/misc/logo.png"),
+    loading: e.generateImage("images/misc/loading.png")
   },
-  goose: {
-    run: [
-      e.generateImage("images/goose/run/run0.png"),
-      e.generateImage("images/goose/run/run1.png")
-    ],
-    idle: e.generateImage("images/goose/idle.png"),
-    sit: e.generateImage("images/goose/sit.png"),
-    honk: [
-      e.generateImage("images/goose/honk/honk0.png"),
-      e.generateImage("images/goose/honk/honk1.png"),
-      e.generateImage("images/goose/honk/honk2.png"),
-      e.generateImage("images/goose/honk/honk3.png")
-    ],
-    waterHonk: [
-      e.generateImage("images/goose/waterHonk/honk0.png"),
-      e.generateImage("images/goose/waterHonk/honk1.png"),
-      e.generateImage("images/goose/waterHonk/honk2.png"),
-      e.generateImage("images/goose/waterHonk/honk3.png")
-    ],
-    swimming: e.generateImage("images/goose/swimming.png")
-  },
+  geese: [
+    e.generateImage("images/geese/goose0.png"),
+    e.generateImage("images/geese/goose1.png"),
+    e.generateImage("images/geese/goose2.png"),
+    e.generateImage("images/geese/goose3.png")
+  ],
   egg: [
     e.generateImage("images/egg/egg0.png"),
     e.generateImage("images/egg/egg1.png")
@@ -212,65 +209,60 @@ const images = {
 
 //CLASSES
 class Goose {
-  constructor(transform, size) {
+  constructor(transform, age) {
+    this.destroy = false;
     this.inWater = false;
-    this.size = size;
     this.type = "goose";
     this.transform = transform;
-    this.name = names[e.randomNum(0, names.length - 1)];
+    //this.name = names[e.randomNum(0, names.length - 1)];
     this.AI = true;
+    this.age = age;
+    this.STB = images.geese[e.randomNum(0, 0)];
+    this.frame = new Vector2(0, 0);
+    if(this.age < 30) {
+      this.size = 0.5;
+    } else {
+      this.size = 1;
+    }
     this.collider = new Polygon([
       new Tri([
-        new Vector2(-28 * size, 32 * size),
-        new Vector2(28 * size, 32 * size),
-        new Vector2(28 * size, -32 * size)
+        new Vector2(-28 * this.size, 32 * this.size),
+        new Vector2(28 * this.size, 32 * this.size),
+        new Vector2(28 * this.size, -32 * this.size)
       ], 3),
       new Tri([
-        new Vector2(28 * size, -32 * size),
-        new Vector2(-28 * size, -32 * size),
-        new Vector2(-28 * size, 32 * size)
+        new Vector2(28 * this.size, -32 * this.size),
+        new Vector2(-28 * this.size, -32 * this.size),
+        new Vector2(-28 * this.size, 32 * this.size)
       ], 3)
     ]);
-    this.objectCollider = new Polygon([
-      new Tri([
-        new Vector2(-5 * size, -20 * size),
-        new Vector2(5 * size, -20 * size),
-        new Vector2(0 * size, -24 * size)
-      ], 3),
-    ]);
-    this.adult = true;
-    this.renderer = new ImageRenderer(images.goose.idle, 1, 0, 0, 64 * size, 96 * size, false, false, false, true);
+    this.renderer = new SpriteRenderer(this.STB, 4, 4, 1, 0, 0, 64 * this.size, 64 * this.size, 0, false, false, false, true);
     this.target = "idle";
     this.frameExtender = 0;
   }
   update() {
     //aging
-    if(this.adult !== true) {
-      if(this.adult < 10000) {
-        this.adult++;
-      } else {
-        this.adult = true;
-        this.size = e.randomNum(18, 22) / 20;
-        if(e.randomNum(1, 100) === 1) {
-          this.size = 3;
-        }
-        if(e.randomNum(1, 100) === 2) {
-          this.size = 0.7;
-        }
-        this.renderer.w = 64 * this.size;
-        this.renderer.h = 96 * this.size;
-      }
+    this.age += 0.01;
+    if(this.age < 30) {
+      this.size = 0.5;
+    } else if(this.age > 500 && this.AI === true) {
+      deaths++;
+      this.destroy = true;
+    } else {
+      this.size = 1;
     }
+    this.renderer.w = 64 * this.size;
+    this.renderer.h = 64 * this.size;
     //ai control
     if(this.AI) {
       if(this.target === "idle") {
-        if(e.randomNum(1, 750) === 1) {
+        if(e.randomNum(1, 500) === 1) {
           this.target = new Vector2(this.transform.x + (e.randomNum(-200, 200)) * this.size, this.transform.y + (e.randomNum(-200, 200)) * this.size);
         }
-        if(e.randomNum(1, 3000) === 1) {
+        if(e.randomNum(1, 1000) === 1) {
           this.target = "honk";
         }
-        if(e.randomNum(1, 6000) === 1 && this.adult === true && !this.inWater) {
+        if(e.randomNum(1, 2000) === 1 && this.age > 30 && !this.inWater && flock.geese.length < 2500) {
           this.target = "egg";
         }
       } else if(this.target.type === "vector2") {
@@ -286,9 +278,10 @@ class Goose {
           this.target = "idle";
           this.frameExtender = 0;
         }
-      } else if(this.target === "egg" && this.adult && !this.inWater) {
+      } else if(this.target === "egg" && this.age > 30 && !this.inWater) {
         if(this.frameExtender > 96) {
           flock.eggs.push(new Egg(this.transform, this.size));
+          addToPipeline(flock.eggs);
           this.target = "idle";
           this.frameExtender = 0;
         }
@@ -304,9 +297,10 @@ class Goose {
           this.target = "idle";
           this.frameExtender = 0;
         }
-      } else if(this.target === "egg" && this.adult && !this.inWater) {
+      } else if(this.target === "egg") {
         if(this.frameExtender > 96) {
           flock.eggs.push(new Egg(new Vector2(this.transform.x, this.transform.y), this.size));
+          addToPipeline(flock.eggs);
           this.target = "idle";
           this.frameExtender = 0;
         }
@@ -331,17 +325,10 @@ class Goose {
         this.target = "idle";
       }
       //action inputs
-      if(e.pressedKeys.includes("z") && BC()) {
-        if(player.target === "sitting" ) {
-          player.target = "idle";
-        } else if(!player.inWater) {
-          player.target = "sitting";
-        }
-      }
-      if(e.pressedKeys.includes("x") && BC()) {
+      if(e.pressedKeys.includes("q") && BC()) {
         player.target = "honk";
       }
-      if(e.pressedKeys.includes("c") && BC() && player.adult === true && !player.inWater) {
+      if(e.pressedKeys.includes("e") && BC() && player.age > 30 === true && !player.inWater) {
         player.target = "egg";
       }
     }
@@ -350,87 +337,99 @@ class Goose {
     //set animations
     if(this.target === "idle") {
       if(this.inWater) {
-        this.renderer.image = images.goose.swimming;
+        [this.frame.x, this.frame.y] = [2, 0];
       } else {
-        this.renderer.image = images.goose.idle;
+        [this.frame.x, this.frame.y] = [0, 0];
       }
-    }
-    if(this.target === "sitting") {
-      this.renderer.image = images.goose.sit;
     }
     if(this.target.type === "vector2" || this.target === "moving") {
       if(this.inWater) {
-        this.renderer.image = images.goose.swimming;
+        [this.frame.x, this.frame.y] = [2, 0];
       } else {
         if(this.frameExtender < 15) {
           this.frameExtender++;
-          this.renderer.image = images.goose.run[Math.floor(this.frameExtender / 8)];
+          [this.frame.x, this.frame.y] = [Math.floor(this.frameExtender / 8), 2];
         } else {
           this.frameExtender = 0;
-          this.renderer.image = images.goose.run[0];
         }
       }
-      if(this.transform.x < this.target.x || (this.target === "moving" && e.pressedKeys.includes("d"))) {
-        this.renderer.hf = true;
+      if(this.AI) {
+        if(this.transform.x < this.target.x) {
+          this.renderer.hf = true;
+        } else {
+          this.renderer.hf = false;
+        }
       } else {
-        this.renderer.hf = false;
+        if(e.pressedKeys.includes("d")) {
+          this.renderer.hf = true;
+        } else if(e.pressedKeys.includes("a")) {
+          this.renderer.hf = false;
+        }
       }
     }
     if(this.target === "honk") {
       this.frameExtender++;
       if(this.frameExtender < 64) {
         if(this.inWater) {
-          this.renderer.image = images.goose.waterHonk[Math.floor(this.frameExtender / 16)];
+          [this.frame.x, this.frame.y] = [Math.floor(this.frameExtender / 16), 3];
         } else {
-          this.renderer.image = images.goose.honk[Math.floor(this.frameExtender / 16)];
+          [this.frame.x, this.frame.y] = [Math.floor(this.frameExtender / 16), 1];
         }
       } else if(this.frameExtender < 96) {
         if(this.frameExtender === 64) {
           effects.push(new Effect(this.transform, 0, 50, 75 * this.size, 40 * this.size, images.effects.honk, 50));
         }
         if(this.inWater) {
-          this.renderer.image = images.goose.waterHonk[3];
+          [this.frame.x, this.frame.y] = [3, 3];
         } else {
-          this.renderer.image = images.goose.honk[3];
+          [this.frame.x, this.frame.y] = [3, 1];
         }
       }
     }
     if(this.target === "egg") {
       this.frameExtender++;
       if(this.frameExtender < 96) {
-        this.renderer.image = images.goose.sit;
+        [this.frame.x, this.frame.y] = [1, 0];
       }
     }
     //RENDER
-    e.renderImage(this.transform, this.renderer);
-    e.renderText(this.transform, new Text("Trebuchet MS", this.name, 5 - (this.name.length * 6 * this.size), 50, 18 * this.size, false, false), new FillRenderer("black", "black", 0.6));
-    if(e.pressedKeys.includes("k") && e.pressedKeys.includes("l")) {
-      e.renderPolygon(this.transform, this.collider, null, new BorderRenderer("white", 1, 2));
-      e.renderPolygon(this.transform, this.objectCollider, null, new BorderRenderer("#9999FF", 1, 2));
+    e.renderSprite(this.transform, this.renderer, this.frame);
+    if(!this.AI) {
+      let dist = 300;
+      for(c = 0; c < renderPipeline.length; c++) {
+        if(renderPipeline[c].type === "goose") {
+          let calcDist = e.calcDistance(this.transform, renderPipeline[c].transform);
+          if(calcDist < dist && calcDist > 0) {
+            dist = calcDist;
+          }
+        }
+      }
+      if(dist < 300) {
+        e.renderImage(this.transform, new ImageRenderer(images.misc.selectBox, 3 / dist, 0, 0, 96 + (Math.sin(EC / 10) * 10), 96 + (Math.sin(EC / 10) * 10), EC, false, false, false, true));
+      }
     }
   }
 }
 class Egg {
   constructor(transform, size) {
+    births++;
     this.transform = transform;
-    this.timer = 0;
     this.size = size;
     this.type = "egg";
+    this.age = 0;
     this.destroy = false;
-    this.renderer = new ImageRenderer(images.egg[0], 1, 0, -20, 16 * size, 24 * size, false, false, false, true);
+    this.renderer = new ImageRenderer(images.egg[0], 1, 0, -20, 16 * size, 24 * size, 0, false, false, false, true);
   }
   update() {
-    this.timer++;
+    this.age += 0.01;
     //DETERMINE CRACK STATE
-    if(e.randomNum(this.timer, 5000) === this.timer || this.timer > 5000) {
-      if(this.renderer.image === images.egg[0]) {
-        this.renderer.image = images.egg[1];
-        this.timer = 3000;
-      } else {
-        flock.geese.push(new Goose(this.transform, 0.5));
-        flock.geese[flock.geese.length - 1].adult = 0;
-        this.destroy = true;
-      }
+    if(this.age > 20) {
+      this.renderer.image = images.egg[1];
+    }
+    if(this.age > 30) {
+      this.destroy = true;
+      flock.geese.push(new Goose(this.transform, 0));
+      addToPipeline(flock.geese);
     }
   }
   render() {
@@ -452,10 +451,7 @@ class Effect {
     this.time--;
   }
   render() {
-    e.renderImage(this.transform, new ImageRenderer(this.effect, 0.8, this.x, this.y, this.w, this.h, false, false, false, true));
-    if(e.pressedKeys.includes("k") && e.pressedKeys.includes("l")) {
-      //e.renderPolygon(this.transform, this.collider, null, new BorderRenderer("white", 1, 2));
-    }
+    e.renderImage(this.transform, new ImageRenderer(this.effect, 0.8, this.x, this.y, this.w, this.h, 0, false, false, false, true));
   }
 }
 class BackgroundItem {
@@ -464,7 +460,7 @@ class BackgroundItem {
     this.transform = transform;
     this.size = size;
     this.skin = e.randomNum(0, 2);
-    this.renderer = new ImageRenderer(this.type === "grass" ? images.tiles.grass[this.skin] : images.tiles.rocks[this.skin] , 1, 0, 0, this.size, this.size, false, false, false, true);
+    this.renderer = new ImageRenderer(this.type === "grass" ? images.tiles.grass[this.skin] : images.tiles.rocks[this.skin] , 1, 0, 0, this.size, this.size, 0, false, false, false, true);
   }
   update() {
   }
@@ -475,14 +471,16 @@ class BackgroundItem {
 
 //UPDATE FUNCTIONS
 function updateHomescreen() {
-  if(inApp) {
-    if(e.detectCollision(e.mouse.absolute, null, new Vector2(220, (e.h * -1) + 170), menuButtonCollider) && e.mouse.clicking) {
-      window.close();
+  if(loaded) {
+    if(inApp) {
+      if(e.detectCollision(e.mouse.absolute, null, new Vector2(220, (e.h * -1) + 170), menuButtonCollider) && e.mouse.clicking) {
+        window.close();
+      }
     }
-  }
-  if(e.detectCollision(e.mouse.absolute, null, new Vector2(220, (e.h * -1) + 60), menuButtonCollider) && e.mouse.clicking) {
-    inGame = true;
-    generateMap();
+    if(e.detectCollision(e.mouse.absolute, null, new Vector2(220, (e.h * -1) + 60), menuButtonCollider) && e.mouse.clicking) {
+      inGame = true;
+      generateMap();
+    }
   }
 }
 function updateCursor() {
@@ -496,12 +494,15 @@ function updateEntities() {
     if(flock.eggs[f].destroy) {
       flock.eggs.splice(f, 1);
       f--;
-      updateRenderPipeline(true);
     }
   }
   //update geese
   for(f = 0; f < flock.geese.length; f++) {
     flock.geese[f].update();
+    if(flock.geese[f].destroy) {
+      flock.geese.splice(f, 1);
+      f--;
+    }
   }
   //update effects
   for(f = 0; f < effects.length; f++) {
@@ -509,7 +510,6 @@ function updateEntities() {
     if(effects[f].time < 0) {
       effects.splice(f, 1);
       f--;
-      updateRenderPipeline(true);
     }
   }
   player.update();
@@ -523,64 +523,86 @@ function updateCamera() {
 }
 function applyInputs() {
   //close app function
-  if(e.detectCollision(e.mouse.absolute, null, new Vector2(e.w - 37, -37), hudCollider) && e.mouse.clicking && inApp) {
+  if(e.detectCollision(e.mouse.absolute, null, new Vector2(e.w - 37, 37 - e.h), hudCollider) && e.mouse.clicking && inApp) {
     window.close();
   }
 }
-function updateRenderPipeline(refresh) {
-  if(refresh) {
+function updateRenderPipeline() {
+  if(EC % 200 === 0 || EC === 0) {
     renderPipeline.splice(0, renderPipeline.length);
     for(f = 0; f < flock.eggs.length; f++) {
-      renderPipeline.push(flock.eggs[f]);
+      if(DDE(flock.eggs[f])) {
+        renderPipeline.push(flock.eggs[f]);
+      }
     }
     for(f = 0; f < flock.geese.length; f++) {
-      renderPipeline.push(flock.geese[f]);
-    }
-    for(f = 0; f < effects.length; f++) {
-      effects[f].render();
+      if(DDE(flock.geese[f])) {
+        renderPipeline.push(flock.geese[f]);
+      }
     }
     for(f = 0; f < map.backgroundItems.length; f++) {
-      renderPipeline.push(map.backgroundItems[f]);
+      if(DDE(map.backgroundItems[f])) {
+        renderPipeline.push(map.backgroundItems[f]);
+      }
     }
     renderPipeline.push(player);
   }
-  renderPipeline.sort(function(a, b) {
-    return b.transform.y - a.transform.y;
-  });
+  if(EC % 10 === 0) {
+    renderPipeline.sort(function(a, b) {
+      return b.transform.y - a.transform.y;
+    });
+  }
+  for(f = 0; f < renderPipeline.length; f++) {
+    if(renderPipeline[f].destroy) {
+      renderPipeline.splice(f, 1);
+      f--;
+    }
+  }
 }
+/*
+function updatePerformance() {
+  if(performanceLog.length === 10) {
+    performanceLog.shift();
+  }
+  if(performanceLog.length === 0) {
+    performanceLog.push(performance.now());
+  } else {
+    performanceLog.push(performance.now() - performanceLog[performanceLog.length - 1]);
+  }
+}
+*/
 
 //RENDER FUNCTIONS
 function renderHUD() {
   //render main HUD components
-  e.renderImage(new Vector2(254, -60), new ImageRenderer(images.logo, 0.8, 0, 0, 276, 108, false, false, true, false));
-  e.renderImage(new Vector2(53, -53), new ImageRenderer(images.owlLogo, 1, 0, 0, 96, 96, false, false, true, false));
   if(inApp) {
-    e.renderImage(new Vector2(e.w - 37, -37), new ImageRenderer(images.buttons.off, 0.8, 0, 0, 64, 64, false, false, true, false));
+    e.renderImage(new Vector2(e.w - 37, 37 - e.h), new ImageRenderer(images.buttons.off, 0.8, 0, 0, 64, 64, 0, false, false, true, false));
   }
   //render goose action icons
-  e.renderImage(new Vector2(34, (e.h * -1) + 40), new ImageRenderer(images.misc.actionBox, 0.8, 0, 0, 64, 64, false, false, true, false));
-  e.renderImage(new Vector2(31, (e.h * -1) + 40), new ImageRenderer(images.goose.sit, 0.8, 0, 0, 48, 64, false, false, true, false));
-  e.renderImage(new Vector2(51, (e.h * -1) + 20), new ImageRenderer(images.misc.key, 0.8, 0, 0, 32, 32, false, false, true, false));
-  e.renderText(new Vector2(45, (e.h * -1) + 15), new Text("Trebuchet MS", "z", 0, 0, 20, true, false), new FillRenderer("black", "black", 0.8, 0));
-  e.renderImage(new Vector2(103, (e.h * -1) + 40), new ImageRenderer(images.misc.actionBox, 0.8, 0, 0, 64, 64, false, false, true, false));
-  e.renderImage(new Vector2(103, (e.h * -1) + 40), new ImageRenderer(images.goose.honk[3], 0.8, 0, 0, 48, 64, false, false, true, false));
-  e.renderImage(new Vector2(123, (e.h * -1) + 20), new ImageRenderer(images.misc.key, 0.8, 0, 0, 32, 32, false, false, true, false));
-  e.renderText(new Vector2(118, (e.h * -1) + 15), new Text("Trebuchet MS", "x", 0, 0, 20, true, false), new FillRenderer("black", "black", 0.8, 0));
-  e.renderImage(new Vector2(172, (e.h * -1) + 40), new ImageRenderer(images.misc.actionBox, 0.8, 0, 0, 64, 64, false, false, true, false));
-  e.renderImage(new Vector2(172, (e.h * -1) + 40), new ImageRenderer(images.egg[0], 0.8, 0, 0, 36, 54, false, false, true, false));
-  e.renderImage(new Vector2(192, (e.h * -1) + 20), new ImageRenderer(images.misc.key, 0.8, 0, 0, 32, 32, false, false, true, false));
-  e.renderText(new Vector2(187, (e.h * -1) + 15), new Text("Trebuchet MS", "c", 0, 0, 20, true, false), new FillRenderer("black", "black", 0.8, 0));
+  e.renderImage(new Vector2(35, (e.h * -1) + 40), new ImageRenderer(images.misc.actionBox, 0.8, 0, 0, 64, 64, 0, false, false, true, false));
+  e.renderSprite(new Vector2(35, (e.h * -1) + 40), new SpriteRenderer(images.geese[0], 4, 4, 0.8, 0, 0, 64, 64, 0, false, false, true, false), new Vector2(3, 1));
+  e.renderImage(new Vector2(55, (e.h * -1) + 20), new ImageRenderer(images.misc.key, 0.8, 0, 0, 32, 32, 0, false, false, true, false));
+  e.renderText(new Vector2(50, (e.h * -1) + 15), new Text("Trebuchet MS", "q", 0, 0, 20, true, false), new FillRenderer("black", "black", 0.8, 0));
+  e.renderImage(new Vector2(103, (e.h * -1) + 40), new ImageRenderer(images.misc.actionBox, 0.8, 0, 0, 64, 64, 0, false, false, true, false));
+  e.renderImage(new Vector2(103, (e.h * -1) + 40), new ImageRenderer(images.egg[0], 0.8, 0, 0, 36, 54, 0, false, false, true, false));
+  e.renderImage(new Vector2(123, (e.h * -1) + 20), new ImageRenderer(images.misc.key, 0.8, 0, 0, 32, 32, 0, false, false, true, false));
+  e.renderText(new Vector2(118, (e.h * -1) + 15), new Text("Trebuchet MS", "e", 0, 0, 20, true, false), new FillRenderer("black", "black", 0.8, 0));
 }
 function renderHomescreen() {
-  //render menu
-  e.renderImage(new Vector2(420, -175), new ImageRenderer(images.logo, 1, 0, 0, 828, 324, false, false, true, false));
-  e.renderImage(new Vector2(e.w - 53, (e.h * -1) + 53), new ImageRenderer(images.owlLogo, 1, 0, 0, 96, 96, false, false, true, false));
-  e.renderImage(new Vector2(e.w - 300, e.h / -2), new ImageRenderer(images.goose.idle, 1, 0, 0, (e.h - 50) * 0.75, (e.h - 50) * 1, false, false, true, false));
-  e.renderImage(new Vector2(220, (e.h * -1) + 60), new ImageRenderer(images.buttons.newGame, 1, 0, 0, 420, 96, false, false, true, false));
-  if(!inApp) {
-    e.renderText(new Vector2(e.w - 30 - (20 * version.toString().length), -40), new Text("Trebuchet MS", "V" + version, 0, 0, 40, true, false), new FillRenderer("black", "black", 0.8, 0));
+  if(loaded) {
+    //render menu
+    e.renderImage(new Vector2(420, -175), new ImageRenderer(images.misc.logo, 1, 0, 0, 828, 324, 0, false, false, true, false));
+    e.renderImage(new Vector2(e.w - 53, (e.h * -1) + 53), new ImageRenderer(images.misc.owlLogo, 1, 0, 0, 96, 96, 0, false, false, true, false));
+    e.renderSprite(new Vector2(e.w - 300, e.h / -2), new SpriteRenderer(images.geese[0], 4, 4, 1, 0, 0, (e.h - 50), (e.h - 50) * 1, 0, false, false, true, false), new Vector2(0, 0));
+    e.renderImage(new Vector2(220, (e.h * -1) + 60), new ImageRenderer(images.buttons.newGame, 1, 0, 0, 420, 96, 0, false, false, true, false));
+    if(!inApp) {
+      e.renderText(new Vector2(e.w - 30 - (20 * version.toString().length), -40), new Text("Trebuchet MS", "V" + version, 0, 0, 40, true, false), new FillRenderer("black", "black", 0.8, 0));
+    } else {
+      e.renderImage(new Vector2(220, (e.h * -1) + 170), new ImageRenderer(images.buttons.quit, 1, 0, 0, 420, 96, 0, false, false, true, false));
+    }
   } else {
-    e.renderImage(new Vector2(220, (e.h * -1) + 170), new ImageRenderer(images.buttons.quit, 1, 0, 0, 420, 96, false, false, true, false));
+    e.renderImage(new Vector2(e.w / 2, e.h / -2), new ImageRenderer(images.misc.loading, 1, 0, 0, 160, 160, HEC * 2, false, false, true, false));
+    e.renderImage(new Vector2(e.w / 2, e.h / -2), new ImageRenderer(images.icon, 1, 0, 0, 65, 65, 0, true, false, true, false));
   }
 }
 function renderEntities() {
@@ -588,20 +610,22 @@ function renderEntities() {
   for(f = 0; f < renderPipeline.length; f++) {
     renderPipeline[f].render();
   }
+  for(f = 0; f < effects.length; f++) {
+    effects[f].render();
+  }
 }
 
 //MISC FUNCTIONS
 //generates background items
 function generateMap() {
-  for(f = 0; f < 2000; f++) {
+  for(f = 0; f < 10000; f++) {
     map.backgroundItems.push(new BackgroundItem(new Vector2(e.randomNum(-10000, 10000), e.randomNum(-10000, 10000)), e.randomNum(40, 60), "grass"));
     map.backgroundItems.push(new BackgroundItem(new Vector2(e.randomNum(-10000, 10000), e.randomNum(-10000, 10000)), e.randomNum(40, 60), "rock"));
   }
   for(f = 0; f < 500; f++) {
-    flock.geese.push(new Goose(new Vector2(e.randomNum(-10000, 10000), e.randomNum(-10000, 10000)), e.randomNum(18, 22) / 20));
-    flock.geese.push(new Goose(new Vector2(e.randomNum(-10000, 10000), e.randomNum(-10000, 10000)), e.randomNum(18, 22) / 20));
+    flock.geese.push(new Goose(new Vector2(e.randomNum(-10000, 10000), e.randomNum(-10000, 10000)), e.randomNum(25, 500)));
+    flock.geese.push(new Goose(new Vector2(e.randomNum(-10000, 10000), e.randomNum(-10000, 10000)), e.randomNum(25, 500)));
   }
-  updateRenderPipeline(true);
 }
 //resets button count for button functionality
 function BC() {
@@ -612,8 +636,32 @@ function BC() {
     return false;
   }
 }
-
-//STARTUP
-player = new Goose(new Vector3(0, 0, 1), e.randomNum(18, 22) / 20);
-player.AI = false;
-player.name = "you";
+//determines if object is distance eligible for the pipeline (determine distance eligibility)
+function DDE(inputObj) {
+  return (Math.abs(player.transform.x - inputObj.transform.x) < e.w * e.camera.zoom && Math.abs(player.transform.y - inputObj.transform.y) < e.h * e.camera.zoom);
+}
+//stats for geese
+function updatePopulationStats() {
+  if(populationLog.length === 1000) {
+    populationLog.shift();
+  }
+  populationLog.push(flock.geese.length);
+  if(deaths > 0) {
+    ratio = Math.round((births * 100) / deaths) / 100;
+  }
+  if(EC % 200 === 0 && e.pressedKeys.includes("p")) {
+    console.log("births: " + births + "; deaths: " + deaths + "; ratio: " + ratio + "; pop: " + flock.geese.length);
+  }
+}
+//adds new items to pipeline
+function addToPipeline(source) {
+  renderPipeline.unshift(source[source.length - 1]);
+}
+//startup
+function loadFinished() {
+  loaded = true;
+  player = new Goose(new Vector3(0, 0, 1), 30);
+  player.AI = false;
+  player.name = "you";
+  runVersion();
+}
