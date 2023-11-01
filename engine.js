@@ -26,10 +26,10 @@ class FillRenderer {
 }
 
 class ImageRenderer {
-	constructor(image, alpha, x, y, w, h, hf, vf, cameraStatic, useCulling) {
+	constructor(image, alpha, x, y, w, h, r, hf, vf, cameraStatic, useCulling) {
 		this.type = "imageRenderer";
 		this.image = image;
-		[this.alpha, this.x, this.y, this.w, this.h] = [alpha, x, y, w, h];
+		[this.alpha, this.x, this.y, this.w, this.h, this.r] = [alpha, x, y, w, h, r];
 		[this.hf, this.vf, this.cameraStatic, this.useCulling] = [hf, vf, cameraStatic, useCulling];
 	}
 }
@@ -75,6 +75,16 @@ class Tri {
 	}
 }
 
+class SpriteRenderer {
+  constructor(image, rows, columns, alpha, x, y, w, h, r, hf, vf, cameraStatic, useCulling) {
+    this.type = "spriteRenderer";
+    this.image = image;
+    [this.SW, this.SH] = [image.naturalWidth / columns, image.naturalHeight / rows];
+		[this.alpha, this.x, this.y, this.w, this.h, this.r] = [alpha, x, y, w, h, r];
+		[this.hf, this.vf, this.cameraStatic, this.useCulling] = [hf, vf, cameraStatic, useCulling];
+  }
+}
+
 const e = {
 	setDimensions: (w, h) => {
   	if(w === "full") {
@@ -106,7 +116,7 @@ const e = {
         }
         e.cx.globalAlpha = imageRenderer.alpha;
         e.cx.translate(vector.x * fc.x, vector.y * fc.y);
-        e.cx.rotate(vector.z * fc.x * fc.y * (Math.PI / 180));
+        e.cx.rotate(imageRenderer.r * fc.x * fc.y * (Math.PI / 180));
         e.cx.drawImage(imageRenderer.image, (imageRenderer.x * fc.x) - (imageRenderer.w / 2), (imageRenderer.y * fc.y) - (imageRenderer.h / 2), imageRenderer.w, imageRenderer.h);
         e.cx.restore();
       }
@@ -131,8 +141,61 @@ const e = {
         }
         e.cx.globalAlpha = imageRenderer.alpha;
         e.cx.translate(((vector.x - e.camera.x) / e.camera.zoom) * fc.x, ((vector.y - e.camera.y) / e.camera.zoom) * fc.y);
-        e.cx.rotate(vector.z * fc.x * fc.y * (Math.PI / 180));
+        e.cx.rotate(imageRenderer.r * fc.x * fc.y * (Math.PI / 180));
         e.cx.drawImage(imageRenderer.image, ((imageRenderer.x / e.camera.zoom) * fc.x) - ((imageRenderer.w / e.camera.zoom) / 2), ((imageRenderer.y / e.camera.zoom) * fc.y) - ((imageRenderer.h / e.camera.zoom) / 2), imageRenderer.w / e.camera.zoom, imageRenderer.h / e.camera.zoom);
+        e.cx.restore();
+      }
+    }
+  },
+  renderSprite: (vector, spriteRenderer, index) => {
+    if(spriteRenderer.cameraStatic) {
+      if(!spriteRenderer.useCulling || (vector.x + (spriteRenderer.w / 2) >= 0 && vector.x - (spriteRenderer.w / 2) <= e.w && vector.y - (spriteRenderer.h / 2) <= 0 && vector.y + (spriteRenderer.h / 2) >= e.h * -1)) {
+        let fc = {
+        	x: 1,
+        	y: -1
+        };
+        e.cx.save();
+        if(spriteRenderer.hf) {
+        	e.cx.scale(-1, 1);
+        	fc.x = -1;
+        } else {
+        	e.cx.scale(1, 1);
+        }
+        if(spriteRenderer.vf) {
+        	e.cx.scale(1, 1);
+        	fc.y = 1;
+        } else {
+        	e.cx.scale(1, -1);
+        }
+        e.cx.globalAlpha = spriteRenderer.alpha;
+        e.cx.translate(vector.x * fc.x, vector.y * fc.y);
+        e.cx.rotate(spriteRenderer.r * fc.x * fc.y * (Math.PI / 180));
+        e.cx.drawImage(spriteRenderer.image, index.x * spriteRenderer.SW, index.y * spriteRenderer.SH, spriteRenderer.SW, spriteRenderer.SH, (spriteRenderer.x * fc.x) - (spriteRenderer.w / 2), (spriteRenderer.y * fc.y) - (spriteRenderer.h / 2), spriteRenderer.w, spriteRenderer.h);
+        e.cx.restore();
+      }
+    } else {
+      if(!spriteRenderer.useCulling || (vector.x + (spriteRenderer.w / 2) >= e.camera.x && e.camera.x + (e.w * e.camera.zoom) >= vector.x - (spriteRenderer.w / 2) && vector.y - (spriteRenderer.h / 2) <= e.camera.y && e.camera.y - (e.h * e.camera.zoom) <= vector.y + (spriteRenderer.h / 2))) {
+        let fc = {
+        	x: 1,
+        	y: -1
+        };
+        e.cx.save();
+        if(spriteRenderer.hf) {
+        	e.cx.scale(-1, 1);
+        	fc.x = -1;
+        } else {
+        	e.cx.scale(1, 1);
+        }
+        if(spriteRenderer.vf) {
+        	e.cx.scale(1, 1);
+        	fc.y = 1;
+        } else {
+        	e.cx.scale(1, -1);
+        }
+        e.cx.globalAlpha = spriteRenderer.alpha;
+        e.cx.translate(((vector.x - e.camera.x) / e.camera.zoom) * fc.x, ((vector.y - e.camera.y) / e.camera.zoom) * fc.y);
+        e.cx.rotate(spriteRenderer.r * fc.x * fc.y * (Math.PI / 180));
+        e.cx.drawImage(spriteRenderer.image, index.x * spriteRenderer.SW, index.y * spriteRenderer.SH, spriteRenderer.SW, spriteRenderer.SH, ((spriteRenderer.x / e.camera.zoom) * fc.x) - ((spriteRenderer.w / e.camera.zoom) / 2), ((spriteRenderer.y / e.camera.zoom) * fc.y) - ((spriteRenderer.h / e.camera.zoom) / 2), spriteRenderer.w / e.camera.zoom, spriteRenderer.h / e.camera.zoom);
         e.cx.restore();
       }
     }
